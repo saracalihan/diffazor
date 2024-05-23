@@ -1,5 +1,15 @@
 # Diffazor
-Diffazor is basic text diff virtualization project. 
+Diffazor is basic text diff virtualization project.
+
+![Application Screenshot](./resources/Screenshot.png)
+
+
+We use the Longest Common Subsequence algorithm to find common letters.
+This algorithm places strings on both sides of a two-dimensional matrix and
+compares whether they are the same letter for each pair i,j.
+We mark the common letters in the table so that we can find the common letters.
+Then, the elements of the two strings are compared by going through the matrix and
+adding or deleting situations are determined.
 
 This is pure c project and it only depends on [Raylib](https://www.raylib.com/) (located on `./raylib-5.0`) for creating graphics.
 

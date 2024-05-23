@@ -4,3 +4,44 @@ asd
 XZ
 
 A
+
+INFO: Initializing raylib 5.0
+INFO: Platform backend: DESKTOP (GLFW)
+INFO: Supported raylib modules:
+INFO:     > rcore:..... loaded (mandatory)
+INFO:     > rlgl:...... loaded (mandatory)
+INFO:     > rshapes:... loaded (optional)
+INFO:     > rtextures:. loaded (optional)
+INFO:     > rtext:..... loaded (optional)
+INFO:     > rmodels:... loaded (optional)
+INFO:     > raudio:.... loaded (optional)
+[HOTRELOAD] Watching './XXX'
+INFO: DISPLAY: Device initialized successfully
+INFO:     > Display size: 2560 x 1440
+INFO:     > Screen size:  848 x 448
+INFO:     > Render size:  848 x 448
+INFO:     > Viewport offsets: 0, 0
+INFO: GLAD: OpenGL extensions loaded successfully
+INFO: GL: Supported extensions count: 227
+INFO: GL: OpenGL device information:
+INFO:     > Vendor:   Intel
+
+  To protect your rights, we need to prevent others from denying you
+these rights or asking you to surrender
+ the rights.  Therefore, you have
+certain responsibilities if you
+ distribute copies of the software, or if
+you modify it: responsibilities to respect the freedom
+ of others.
+
+  For example, if you distribute copies of such a program, whether
+gratis or for a fee, you must pass
+ on to the recipients the same
+freedoms that you received
+.  You must make sure that they, too, receive
+or can get the
+ source code.  And you must show
+them these terms
+so they
+know their r
+ights.
