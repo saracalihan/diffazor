@@ -1,6 +1,6 @@
 RAYLIB_PATH=./raylib-5.0
 RAYLIB_FLAGS=-I${RAYLIB_PATH}/src -L${RAYLIB_PATH}/src  -l:libraylib.so -Wl,-rpath=./raylib-5.0/src ${FLAGS}
-FLAGS= -Wall -Wextra -lm -ldl -ggdb
+FLAGS= -Wall -Wextra -Wno-unknown-pragmas -lm -ldl -ggdb
 
 all: build_main run
 
@@ -15,3 +15,6 @@ run: build/main
 	./build/main
 
 hotreload: build_plugin
+
+rm:
+	rm ./build/*.o ./build/*.so 2>/dev/null ./build/main

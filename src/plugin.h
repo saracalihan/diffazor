@@ -4,15 +4,30 @@
 #include <raylib.h>
 #include <string.h>
 
+typedef enum{
+        ADD,
+        DELETE,
+        SAME,
+}DiffType;
+
+typedef struct{
+        char c;
+        DiffType diff;
+} TextDiff;
+
+
 typedef struct {
-        char *items;
+        TextDiff *items;
         int count;
         int capacity;
         int line_count;
 } TextVector;
 
 typedef struct{
-        TextVector input;
+        TextVector input1;
+        TextVector input2;
+        TextVector inputs_diff;
+        TextVector virtualized_text;
         Font font;
 } Plugin;
 

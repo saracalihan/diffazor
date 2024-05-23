@@ -52,14 +52,15 @@ int main(){
 
     // Enable hotreload with using dynamic library
     InitWindow(848, 448, "Diffazor");
-    load_plugin();
-    plugin_data = plugin_init();
-
     SetWindowState(FLAG_WINDOW_RESIZABLE);
     SetTargetFPS(60);
 
+    load_plugin();
+    plugin_data = plugin_init();
+
     while (!WindowShouldClose())
     {
+        BeginDrawing();
         if(IsKeyPressed(KEY_R)){
             TraceLog(LOG_INFO, "Reload");
             void* data = plugin_preload();
@@ -71,11 +72,12 @@ int main(){
         if(IsKeyPressed(KEY_H)){
             printf("[HOTRELOAD] ----------------------\n");
             printf("[HOTRELOAD] Reloading...\n");
-            system("make hotreload");
+            hotreload_command();
             printf("[HOTRELOAD] ----------------------\n");
         }
         #endif
         plugin_task();
+        EndDrawing();
     }
 
     CloseWindow();

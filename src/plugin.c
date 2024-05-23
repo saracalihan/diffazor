@@ -6,12 +6,14 @@
 
 #include "raylib.h"
 #include "plugin.h"
+#include "algorithm.c"
 
-#define FONT_SIZE 18
-#define INPUT_FILE_PATH "./input.txt"
-#define FONT_PATH "./resources/LiberationMono-Regular.ttf"
+#define FONT_SIZE        18
+#define INPUT_FILE1_PATH "./input1.txt"
+#define INPUT_FILE2_PATH "./input2.txt"
+#define FONT_PATH        "./resources/LiberationMono-Regular.ttf"
 #define SCROLL_SENSIVITY 3
-#define LINE_SPACING 2
+#define LINE_SPACING     2
 
 static Plugin* p = NULL;
 int screenHeight = 0,
@@ -22,9 +24,7 @@ int screenHeight = 0,
     // Sidebar
     sidebarWidth=16;
 
-float scrollValue =0;
-
-char* virtualizedText=0;
+int scrollValue =0;
 
 bool isFileEnd = false;
 
@@ -45,12 +45,12 @@ void draw_text_ex(char* text, int x, int y, int size, Color color){
 
 
 
-void read_input(){
+void read_input(TextVector *input, const char* file_path){
     int size = 0;
 
-    FILE *f = fopen(INPUT_FILE_PATH, "r");
+    FILE *f = fopen(file_path, "r");
     if(f == NULL){
-        TraceLog(LOG_ERROR, "%s file can not open! %m", INPUT_FILE_PATH);
+        TraceLog(LOG_ERROR, "%s file can not open! %m", file_path);
         exit(1);
     }
 
@@ -58,154 +58,182 @@ void read_input(){
     size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    if(p->input.items !=NULL){
-        free(p->input.items);
+    if(input->items !=NULL){
+        free(input->items);
+        input->items = NULL;
     }
-    p->input.items = malloc(sizeof(char) * size);
-    p->input.count = size;
-    p->input.line_count=1;
+    input->items = malloc(sizeof(TextDiff) * size);
+    input->count = size;
+    input->line_count=1;
     for(int i =0; i<size; i++){
         char c = getc(f);
-        p->input.items[i] = c;
-        c == '\n' && p->input.line_count++;
+        input->items[i].c = c;
+        input->items[i].diff = SAME;
+        if(c == '\n'){
+           input->line_count++;
+        }
     }
 
     fclose(f);
-    virtualizedText = p->input.items;
-
-    char* str[6]={0};
-    sidebarWidth = MeasureTextEx(p->font, str, FONT_SIZE, 0).y +8;
+    // inputs_diff = p->input.items;
 }
 
 void handle_scroll(){
-    static int lastLineCount = 0;
-    static int lastStartLineNum = 0;
-    static int lastPos = 0;
+    // static int lastLineCount = 0;
+    // static int lastPos = 0;
 
-    int largestLineLetterCount = 0;
-    float mouseScrollY = GetMouseWheelMove();
+    // static const Vector2 fontSize = MeasureTextEx(p->font, "A", p->font.baseSize, 0);
+    // static int row_count = screenHeight / font.y;
+    // static int column_count = screenWidth / font.x;
+    // int total_char_count = row_count*column_count;
 
-    if(mouseScrollY<0 && lastLineCount+1 >= p->input.line_count){
-        return;
-    }
-    Vector2 fontSize = MeasureTextEx(p->font, "A", p->font.baseSize, 0);
-    int fontHeight = fontSize.y;
-    int fontWidth = fontSize.x;
+    // int largestLineLetterCount = 0;
+    // int mouseScrollY = (int)GetMouseWheelMove();
 
-    lineHeight = fontHeight + LINE_SPACING;
-    screenLineCount = screenHeight / (FONT_SIZE-3);
+    // if(lastLineCount == 0){
+    //     lastLineCount = p->inputs_diff.count < total_char_count ? p->input.line_count : screenLineCount ;
+    // }
 
-    scrollValue += mouseScrollY * SCROLL_SENSIVITY;
-    startLineNumber = (int)(scrollValue < 0 ? abs(scrollValue) : 0);
+    // // You are on the end of file and scroll down
+    // if(mouseScrollY<0 && lastLineCount > p->input.line_count){
+    //     return;
+    // }
+    //    // You are on the start of file and scroll up
+    // // if(mouseScrollY>0 && lastLineCount <= screenLineCount){
+    // //     return;
+    // // }
+    // int fontHeight = fontSize.y;
+    // int fontWidth = fontSize.x;
 
-    int curPos =0,
-        line_count=0;
-    // TODO: curPos'un bulunması için stirng en başından itibaren okunuyor. Bunun yerine son pozisyon tutulup oradan başlanabilir.
-    for(int i=0; i< startLineNumber; i++){
-        if(line_count + screenLineCount >= p->input.count){
-            break;
-        }
-        int letterCount=0;
+    // lineHeight = fontHeight + LINE_SPACING;
+    // screenLineCount = screenHeight / (FONT_SIZE-3);
 
-        // Read line
-        while(p->input.items[curPos] != '\n'){
-           curPos++;
-           letterCount++;
-        }
+    // scrollValue += mouseScrollY * SCROLL_SENSIVITY;
+    // startLineNumber = (scrollValue < 0 ? abs(scrollValue) : 0);
 
-                // For vertical line scrolling
-        if(letterCount>largestLineLetterCount){
-            largestLineLetterCount = letterCount;
-        }
-            // printf("%i:%i %i %i\n",line_count ,largestLineLetterCount, startLineNumber, curPos);
-        line_count++;
-        curPos++;
-    }
-    /*
-    // scrolled line count and scroll direction
-    int step =0;
-        startLineNumber > lastStartLineNum
-            ? startLineNumber - lastStartLineNum
-            : lastLineCount   - startLineNumber;
+    // int curPos =0,
+    //     letterCount=0;
+    // for(int i=0; mouseScrollY != 0 && i < abs(mouseScrollY)*SCROLL_SENSIVITY; i++){
+    //     // scroll down
+    //     if(mouseScrollY<0){
+    //         while(p->input.items[lastPos + curPos] != '\n'){
+    //             curPos++;
+    //         }
+    //         curPos++;
+    //         lastLineCount++;
 
-    for(int i=0; i < abs(step); i++){
-        // if(line_count + screenLineCount >= p->input.count){
-        //     break;
-        // }
-        int letterCount=0;
-        // Read line
-        // stepe göre direction değişecek ve pos arttırılacak veya azaltılacak
-        while(p->input.items[lastPos + curPos] != '\n'){
-           curPos++;
-           letterCount++;
-        }
+    //     } else { // scroll up
+    //         while(p->input.items[lastPos - curPos] != '\n'){
+    //             curPos--;
+    //         }
+    //         curPos--;
+    //         lastLineCount--;
+    //     }
+    // }
 
-                // For vertical line scrolling
-        if(letterCount>largestLineLetterCount){
-            largestLineLetterCount = letterCount;
-        }
-            printf("%i:%i %i %i\n",line_count ,largestLineLetterCount, startLineNumber, curPos);
-        line_count++;
-        curPos++;
-    }
-*/
-    // TODO: tüm string görünmese bile ekrana yazılıyor. Burada gerçekten kesilme yapılmalı
-    // Set editor text
-    virtualizedText = p->input.items + curPos;
+    // // TODO: tüm string görünmese bile ekrana yazılıyor. Burada gerçekten kesilme yapılmalı.inputs_diff için (satır satısı)*(ekran genişliği / font gelişliği) lkadadr yer al ve  texti oraya ata
+    // // Set editor text
+    // lastPos += curPos;
+    // inputs_diff = p->input.items + lastPos;
 
-    lastPos = curPos;
 
-    // Draw horizental scroll
-    int width = 6;
-    bool isHover = false;
-    Rectangle r = {
-        .x      = screenWidth - width,
-        .y      = (screenHeight /  p->input.line_count )* startLineNumber,
-        .width  = width,
-        .height = screenHeight / (p->input.line_count / screenLineCount) ,
-    };
-    Vector2 m = GetMousePosition();
-    if(CheckCollisionPointRec( m, r)){
-        isHover = true;
-    }
-    DrawRectangleRec(r, isHover ? scrollHover : scrollBg);
 
-    // Draw vertical scroll
-    if(largestLineLetterCount * (fontWidth + LINE_SPACING) > screenWidth ){
-        DrawRectangle(
-            0,
-            screenHeight,
-            50,
-            width,
-            RED
-        );
-    }
+    // int width = 6;
+    // // Draw horizental scroll
+    // if(p->input.line_count > screenLineCount){
+    //     bool isHover = false;
+    //     Rectangle r = {
+    //         .x      = screenWidth - width,
+    //         .y      = (screenHeight /  p->input.line_count )* startLineNumber,
+    //         .width  = width,
+    //         .height = screenHeight / (p->input.line_count / screenLineCount) ,
+    //     };
+    //     Vector2 m = GetMousePosition();
+    //     if(CheckCollisionPointRec( m, r)){
+    //         isHover = true;
+    //     }
+    //     DrawRectangleRec(r, isHover ? scrollHover : scrollBg);
+    // }
 
-    if(line_count != lastLineCount){
-        lastLineCount = line_count + screenLineCount;
-    }
+    // // Draw vertical scroll
+    // if(largestLineLetterCount * (fontWidth + LINE_SPACING) > screenWidth ){
+    //     DrawRectangle(
+    //         0,
+    //         screenHeight,
+    //         50,
+    //         width,
+    //         RED
+    //     );
+    // }
 }
+
+void draw_texts(){
+     Vector2 font = MeasureTextEx(p->font, "A", FONT_SIZE, 0);
+        int column=0, row=0;
+        bool is_newline = false;
+        for(int i =0; i< p->inputs_diff.count; i++){
+            Color c;
+            switch(p->inputs_diff.items[i].diff){
+                case ADD:
+                    c= DARKGREEN;
+                    break;
+                case DELETE:
+                    c= MAROON;
+                    break;
+                case SAME:
+                    c= editorBg;
+                    break;
+            }
+            char t[3] ={0};
+            is_newline = p->inputs_diff.items[i].c == '\n';
+
+            // If it is a new line character go to next line
+            if(is_newline){
+                column=0;
+                row++;
+            }
+            int x = 30 + column*(font.x),
+                y = row * font.y;
+
+            DrawRectangle(x+1,y, font.x, font.y, c);
+
+            // New line character doesnt need to draw
+            if(!is_newline) {
+                sprintf(&t, "%c",p->inputs_diff.items[i].c);
+                DrawTextEx(
+                    p->font,
+                    t,
+                    (Vector2){ .x=x, .y=y},
+                    FONT_SIZE,
+                    0,
+                    WHITE
+                );
+                column++;
+            }
+        }
+}
+
+void flush_plugin();
 
 void plugin_task(){
     screenHeight = GetScreenHeight();
     screenWidth = GetScreenWidth();
-    BeginDrawing();
         ClearBackground(editorBg);
         if(IsKeyPressed(KEY_F)){
             flush_plugin();
         }
 
-        // Draw text
-        draw_text(
-            virtualizedText,
-            (sidebarWidth +4) + ( FONT_SIZE/2 ) - (0* FONT_SIZE/2), // sidebar + pading + back
-            0,
-            editorText
-        );
+        #pragma region draw_text
+        draw_texts();
+        #pragma endregion
 
-        // LOGIC STARTS HERE
-        handle_scroll();
+        #pragma region draw_scrolls
+        // Draw scroll sticks
+        //handle_scroll();
+        // End of draw scroll sticks
+        #pragma endregion
 
+        #pragma region draw_sidebar
         // Draw line numbers
         DrawRectangle(
             0,
@@ -214,11 +242,15 @@ void plugin_task(){
             screenHeight,
             sidebarBg
         );
+        // End of draw line numbers
 
-        char str[p->input.line_count];
-        memset(str, 0, p->input.line_count);
-        for(int i=0; i<= screenLineCount; i++){
-                 sprintf(str, "%s%d\n",str, startLineNumber + i + 1);
+        // Draw sidebar
+        screenLineCount = screenHeight / MeasureTextEx(p->font, "A", FONT_SIZE, 0).y;
+        int num_count = p->inputs_diff.line_count < screenLineCount ? p->inputs_diff.line_count : screenLineCount;
+        char str[num_count*3];
+        memset(str, 0, num_count*2);
+        for(int i=0; i<= num_count; i++){
+            sprintf(str, "%s%d\n",str, startLineNumber + i + 1);
         }
         draw_text(
             str,
@@ -226,15 +258,16 @@ void plugin_task(){
             0,
             sidebarText
         );
-
-    EndDrawing();
+        //End of draw sidebar
+        #pragma endregion
 }
 
 void load_assets(){
     if(p == NULL){
-        return TraceLog(LOG_ERROR, "[LOAD ASSET] Plugin is null!");
+        TraceLog(LOG_ERROR, "[LOAD ASSET] Plugin is null!");
+        return exit(1);
     }
-    Font f = LoadFontEx(FONT_PATH, 32, NULL, 0);
+    Font f = LoadFontEx(FONT_PATH, 32, NULL, 250);
     memcpy(&p->font, &f, sizeof(f));
     if (p->font.texture.id == 0) {
         return TraceLog(LOG_ERROR, "[LOAD ASSET] %s font can not loading!", FONT_PATH);
@@ -254,13 +287,25 @@ void flush_plugin(){
     if(p == NULL){
         p = malloc(sizeof(Plugin));
         TraceLog(LOG_INFO, "Plugin data allocated");
+        assert(p != NULL && "Plugin malloc error!");
+        memset(p, 0, sizeof(Plugin));
     }
-    assert(p != NULL && "Plugin malloc error!");
+
     Font f = p->font;
+    if(p->input1.items != NULL)
+        free(p->input1.items);
+    if(p->input2.items != NULL)
+        free(p->input2.items);
+    if(p->inputs_diff.items != NULL)
+        free(p->inputs_diff.items);
+    if(p->virtualized_text.items != NULL)
+        free(p->virtualized_text.items);
     memset(p, 0, sizeof(Plugin));
     p->font = f;
-    // memset(p->input.items, 0, sizeof(Plugin));
-    read_input();
+
+    read_input(&p->input1, INPUT_FILE1_PATH);
+    read_input(&p->input2, INPUT_FILE2_PATH);
+    p->inputs_diff= lcs(&p->input1, &p->input2);
 
     TraceLog(LOG_INFO, "Plugin data flushed!");
 }
@@ -282,4 +327,5 @@ void plugin_postload(Plugin* plugin){
     TraceLog(LOG_INFO, "[PLUGIN] Plugin postload run!");
     p = plugin;
     load_assets();
-}
+
+ }
